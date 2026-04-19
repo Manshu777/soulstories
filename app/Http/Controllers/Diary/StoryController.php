@@ -4,6 +4,10 @@ namespace App\Http\Controllers\Diary;
 
 use App\Http\Controllers\Controller;
 use App\Models\Story;
+<<<<<<< HEAD
+=======
+use App\Models\StoryChapter;
+>>>>>>> 7042497cfc8ddf8557fa3ce1bb8f911121717f35
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -69,12 +73,25 @@ class StoryController extends Controller
             }
         }
 
+<<<<<<< HEAD
+=======
+         $chapterNumber = request()->get('chapter', 1);
+
+    $chapter = StoryChapter::where('story_id', $story->id)
+        ->where('chapter_number', $chapterNumber)
+        ->first();
+
+>>>>>>> 7042497cfc8ddf8557fa3ce1bb8f911121717f35
         $likesCount = $story->likes()->count();
         $commentsCount = $story->chapters->sum(fn ($c) => $c->allComments()->where('status', 'visible')->count());
         $inLibrary = auth()->check() && auth()->user()->library()->where('story_id', $story->id)->exists();
         $hasLiked = auth()->check() && $story->likes()->where('user_id', auth()->id())->exists();
 
+<<<<<<< HEAD
         return view('diary.stories.show', compact('story', 'likesCount', 'commentsCount', 'inLibrary', 'hasLiked'));
+=======
+        return view('diary.stories.show', compact('story', 'likesCount', 'commentsCount', 'inLibrary', 'hasLiked',"chapter"));
+>>>>>>> 7042497cfc8ddf8557fa3ce1bb8f911121717f35
     }
 
     public function create()

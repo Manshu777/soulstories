@@ -30,7 +30,11 @@
                     @foreach($sectionStories as $story)
                         <a href="{{ route('diary.stories.show', $story->slug) }}" class="w-36 sm:w-40 flex-shrink-0 group">
                             @if($story->cover_image)
+<<<<<<< HEAD
                                 <img src="{{ $story->cover_image }}" alt="{{ $story->title }}" class="w-full h-52 sm:h-56 object-cover rounded-xl ring-1 ring-slate-100 group-hover:ring-violet-200 transition">
+=======
+                                <img src="/storage/{{ $story->cover_image }}" alt="{{ $story->title }}" class="w-full h-52 sm:h-56 object-cover rounded-xl ring-1 ring-slate-100 group-hover:ring-violet-200 transition">
+>>>>>>> 7042497cfc8ddf8557fa3ce1bb8f911121717f35
                             @else
                                 <div class="w-full h-52 sm:h-56 rounded-xl bg-slate-100 flex items-center justify-center text-4xl">📖</div>
                             @endif

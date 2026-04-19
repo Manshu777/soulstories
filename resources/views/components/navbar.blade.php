@@ -58,12 +58,23 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                     </svg>
                 </button>
+<<<<<<< HEAD
 
                 <div class="absolute right-0 hidden group-hover:block bg-white shadow-lg rounded-lg mt-3 w-56 py-2 border">
+=======
+<div class="absolute -left-1/2 pt-5">
+                <div class=" hidden group-hover:block bg-white shadow-lg rounded-lg  w-56 py-2 border">
+>>>>>>> 7042497cfc8ddf8557fa3ce1bb8f911121717f35
                     <a href="{{ route('diary.stories.create') }}" class="block px-4 py-2 hover:bg-gray-100">Create New Story</a>
                     <a href="{{ route('diary.dashboard') }}" class="block px-4 py-2 hover:bg-gray-100">My Stories</a>
                     <a href="{{ route('diary.library.index') }}" class="block px-4 py-2 hover:bg-gray-100">Library</a>
                 </div>
+<<<<<<< HEAD
+=======
+</div>
+
+
+>>>>>>> 7042497cfc8ddf8557fa3ce1bb8f911121717f35
             </div>
 
             <!-- Premium Button -->

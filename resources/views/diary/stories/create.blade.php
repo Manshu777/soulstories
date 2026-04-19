@@ -45,16 +45,11 @@
 
         <aside class="lg:col-span-4">
             <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4 sticky top-24">
-<<<<<<< HEAD
-                <h2 class="font-semibold text-slate-800">Story Settings</h2>
-
-=======
             <div class="flex justify-between items-center"> 
             <h2 class="font-semibold text-slate-800">Story Settings</h2>
     <a href="/ai/image" class="text-blue-600"> Generator image </a>
 
             </div>
->>>>>>> 7042497cfc8ddf8557fa3ce1bb8f911121717f35
                 <div class="rounded-xl border-2 border-dashed border-slate-300 p-4 text-center" @dragover.prevent="dragging=true" @dragleave.prevent="dragging=false" @drop.prevent="handleDrop($event)">
                     <p class="text-sm text-slate-600 mb-2">Cover image</p>
                     <input type="file" name="cover_image" x-ref="coverInput" accept="image/*" class="w-full text-sm">

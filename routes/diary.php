@@ -1,9 +1,6 @@
 <?php
 
-<<<<<<< HEAD
-=======
 use App\Http\Controllers\aiController;
->>>>>>> 7042497cfc8ddf8557fa3ce1bb8f911121717f35
 use App\Http\Controllers\Diary\AuthorController;
 use App\Http\Controllers\Diary\ChapterController;
 use App\Http\Controllers\Diary\CommentController;
@@ -70,12 +67,9 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/author/{author}/follow', [AuthorController::class, 'follow'])->name('diary.authors.follow');
     Route::post('/author/{author}/unfollow', [AuthorController::class, 'unfollow'])->name('diary.authors.unfollow');
-<<<<<<< HEAD
-=======
 
     Route::get("/ai/image",[aiController::class,"showAi"]);
   Route::post("/ai/generate-image",[aiController::class,"generate"])->name('generate.image');;
      
 
->>>>>>> 7042497cfc8ddf8557fa3ce1bb8f911121717f35
 });

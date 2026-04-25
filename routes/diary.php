@@ -3,11 +3,15 @@
 use App\Http\Controllers\aiController;
 use App\Http\Controllers\Diary\AuthorController;
 use App\Http\Controllers\Diary\ChapterController;
+use App\Http\Controllers\Diary\CategoryController;
 use App\Http\Controllers\Diary\CommentController;
 use App\Http\Controllers\Diary\DashboardController;
+use App\Http\Controllers\Diary\SettingsController;
 use App\Http\Controllers\Diary\LibraryController;
 use App\Http\Controllers\Diary\LikeController;
 use App\Http\Controllers\Diary\ReportController;
+use App\Http\Controllers\Diary\SearchController;
+use App\Http\Controllers\Diary\StoryReviewController;
 use App\Http\Controllers\Diary\StoryController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -19,7 +23,11 @@ Route::get('/stories/create', [StoryController::class, 'create'])
     ->middleware('auth');
 
 Route::get('/stories/{slug}', [StoryController::class, 'show'])->name('diary.stories.show');
+Route::get('/story/{slug}', [StoryController::class, 'show'])->name('diary.story.show');
 Route::get('/author/{username}', [AuthorController::class, 'show'])->name('diary.authors.show');
+Route::get('/search', [SearchController::class, 'index'])->name('diary.search');
+Route::get('/categories', [CategoryController::class, 'index'])->name('diary.categories.index');
+Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('diary.category.show');
 
 Route::get('/chapter-writer', fn () => view('diary.chapter-writer'))
     ->middleware('auth')
@@ -64,9 +72,20 @@ Route::middleware('auth')->group(function () {
     Route::delete('/library/{story}', [LibraryController::class, 'destroy'])->name('diary.library.destroy');
 
     Route::post('/stories/{story}/report', [ReportController::class, 'store'])->name('diary.report.store');
+    Route::post('/story/{story}/review', [StoryReviewController::class, 'store'])->name('diary.story.review');
 
     Route::post('/author/{author}/follow', [AuthorController::class, 'follow'])->name('diary.authors.follow');
     Route::post('/author/{author}/unfollow', [AuthorController::class, 'unfollow'])->name('diary.authors.unfollow');
+    Route::post('/follow/{author}', [AuthorController::class, 'follow'])->name('diary.follow');
+    Route::delete('/unfollow/{author}', [AuthorController::class, 'unfollow'])->name('diary.unfollow');
+
+    Route::get('/settings', [SettingsController::class, 'index'])->name('diary.settings');
+    Route::post('/settings/account', [SettingsController::class, 'updateAccount'])->name('diary.settings.account');
+    Route::post('/settings/notifications', [SettingsController::class, 'updateNotifications'])->name('diary.settings.notifications');
+    Route::post('/settings/preferences', [SettingsController::class, 'updatePreferences'])->name('diary.settings.preferences');
+    Route::delete('/settings/muted/{user}', [SettingsController::class, 'unmute'])->name('diary.settings.unmute');
+    Route::delete('/settings/blocked/{user}', [SettingsController::class, 'unblock'])->name('diary.settings.unblock');
+    Route::get('/settings/download/{format}', [SettingsController::class, 'downloadData'])->name('diary.settings.download');
 
     Route::get("/ai/image",[aiController::class,"showAi"]);
   Route::post("/ai/generate-image",[aiController::class,"generate"])->name('generate.image');;

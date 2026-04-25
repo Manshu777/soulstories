@@ -9,3 +9,58 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+:root {
+    --sd-primary: #6366F1;
+    --sd-primary-dark: #4F46E5;
+    --sd-primary-light: #EEF2FF;
+    --sd-text: #111827;
+    --sd-text-muted: #6B7280;
+    --sd-border: #E5E7EB;
+}
+
+.sd-btn-primary {
+    background: var(--sd-primary);
+    color: #fff;
+    border: 1px solid var(--sd-primary);
+    border-radius: 0.75rem;
+    padding: 0.625rem 1rem;
+    font-weight: 600;
+}
+.sd-btn-primary:hover { background: var(--sd-primary-dark); border-color: var(--sd-primary-dark); }
+.sd-btn-outline {
+    background: #fff;
+    color: var(--sd-primary);
+    border: 1px solid var(--sd-primary);
+    border-radius: 0.75rem;
+    padding: 0.625rem 1rem;
+    font-weight: 600;
+}
+.sd-btn-ghost {
+    background: transparent;
+    color: var(--sd-primary);
+    border: 1px solid transparent;
+    border-radius: 0.75rem;
+    padding: 0.625rem 1rem;
+    font-weight: 600;
+}
+.sd-btn-ghost:hover { background: var(--sd-primary-light); }
+.sd-input {
+    width: 100%;
+    border: 1px solid var(--sd-border);
+    border-radius: 0.75rem;
+    padding: 0.625rem 0.875rem;
+    color: var(--sd-text);
+    background: #fff;
+}
+.sd-input:focus {
+    border-color: var(--sd-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    outline: none;
+}
+.sd-card {
+    background: #fff;
+    border: 1px solid var(--sd-border);
+    border-radius: 0.75rem;
+    box-shadow: 0 8px 24px -16px rgba(17, 24, 39, 0.25);
+}

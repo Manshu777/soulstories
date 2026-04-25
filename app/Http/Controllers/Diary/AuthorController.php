@@ -10,36 +10,58 @@ class AuthorController extends Controller
 {
     public function show(string $username)
     {
-        $author = User::where('username', $username)
+        $author = User::query()
+            ->where('username', $username)
             ->where('status', 'active')
             ->firstOrFail();
 
-        $stories = $author->stories()
+        $recentStories = $author->stories()
             ->where('approval_status', 'approved')
-            ->where('visibility', 'public')
-            ->withCount('storyReads')
+            ->whereIn('visibility', ['public', 'premium'])
+            ->withCount(['storyReads', 'likes as likes_count', 'publishedChapters as parts_count'])
             ->latest()
+            ->limit(10)
             ->get();
 
         $followersCount = $author->followers()->count();
         $followingCount = $author->following()->count();
-        $isFollowing = auth()->check() && $author->followers()->where('follower_id', auth()->id())->exists();
 
-        return view('diary.authors.show', compact('author', 'stories', 'followersCount', 'followingCount', 'isFollowing'));
+        $isFollowing = auth()->check()
+            && auth()->id() !== $author->id
+            && auth()->user()->following()->where('following_id', $author->id)->exists();
+
+        return view('diary.authors.show', [
+            'author' => $author,
+            'followers_count' => $followersCount,
+            'following_count' => $followingCount,
+            'isFollowing' => $isFollowing,
+            'recent_stories' => $recentStories,
+        ]);
     }
 
     public function follow(Request $request, User $author)
     {
+        if (! auth()->check()) {
+            return redirect()->route('login');
+        }
+
         if ($author->id === auth()->id()) {
             return back()->with('error', 'You cannot follow yourself.');
         }
+
         auth()->user()->following()->syncWithoutDetaching([$author->id]);
+
         return back()->with('success', 'Following ' . $author->name);
     }
 
     public function unfollow(Request $request, User $author)
     {
+        if (! auth()->check()) {
+            return redirect()->route('login');
+        }
+
         auth()->user()->following()->detach($author->id);
-        return back()->with('success', 'Unfollowed.');
+
+        return back()->with('success', 'Unfollowed ' . $author->name);
     }
 }

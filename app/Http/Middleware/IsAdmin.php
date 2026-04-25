@@ -10,7 +10,9 @@ class IsAdmin
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $request->user() || ! $request->user()->hasRole('admin')) {
+        $user = $request->user('admin') ?? $request->user();
+
+        if (! $user || ! $user->hasAnyRole(['Super Admin', 'Admin', 'Moderator', 'Editor', 'admin'])) {
             abort(403, 'Admin access required.');
         }
 

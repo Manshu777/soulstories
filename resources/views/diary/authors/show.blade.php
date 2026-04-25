@@ -1,56 +1,95 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-3xl mx-auto px-4 py-8 sm:px-6">
-    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-        @if($author->avatar)
-        <img src="{{ $author->avatar }}" alt="{{ $author->name }}" class="w-24 h-24 rounded-full object-cover">
-        @else
-        <div class="w-24 h-24 rounded-full bg-slate-200 flex items-center justify-center text-3xl font-serif text-slate-600">{{ Str::upper(Str::limit($author->name, 1)) }}</div>
-        @endif
-        <div>
-            <h1 class="font-serif text-2xl font-semibold text-slate-800">{{ $author->name }}</h1>
-            <p class="text-slate-500">@{{ $author->username }}</p>
-            @if($author->bio)
-            <p class="mt-2 text-slate-600">{{ $author->bio }}</p>
-            @endif
-            <div class="flex gap-4 mt-2 text-sm text-slate-500">
-                <span>{{ $followersCount }} followers</span>
-                <span>{{ $followingCount }} following</span>
-            </div>
-            @auth
-            @if($author->id !== auth()->id())
-            @if($isFollowing)
-            <form action="{{ route('diary.authors.unfollow', $author) }}" method="post" class="mt-3 inline">
-                @csrf
-                <button type="submit" class="text-sm px-4 py-2 rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50">Unfollow</button>
-            </form>
+<div class="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+    <section class="rounded-2xl border border-[#E5E7EB] bg-white shadow-[0_8px_24px_-16px_rgba(17,24,39,0.25)] p-6 sm:p-8">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6">
+            @if($author->avatar)
+                <img src="{{ $author->avatar }}" alt="{{ $author->name }}" class="w-24 h-24 rounded-full object-cover border border-[#E5E7EB]">
             @else
-            <form action="{{ route('diary.authors.follow', $author) }}" method="post" class="mt-3 inline">
-                @csrf
-                <button type="submit" class="text-sm px-4 py-2 rounded-full bg-slate-800 text-white hover:bg-slate-700">Follow</button>
-            </form>
+                <div class="w-24 h-24 rounded-full bg-[#EEF2FF] border border-[#E5E7EB] flex items-center justify-center text-3xl font-semibold text-[#6366F1]">
+                    {{ Str::upper(Str::limit($author->name, 1)) }}
+                </div>
             @endif
-            @endif
-            @endauth
-        </div>
-    </div>
 
-    <section class="mt-10 border-t pt-8">
-        <h2 class="font-serif text-xl font-semibold text-slate-800 mb-4">Stories</h2>
-        <ul class="space-y-4">
-            @foreach($stories as $story)
-            <li>
-                <a href="{{ route('diary.stories.show', $story->slug) }}" class="block py-3 border-b border-slate-100 hover:border-slate-200">
-                    <span class="font-medium text-slate-800">{{ $story->title }}</span>
-                    <span class="text-slate-400 text-sm ml-2">{{ $story->read_time }} min · {{ number_format($story->story_reads_count) }} reads</span>
+            <div class="min-w-0 flex-1">
+                <h1 class="text-2xl sm:text-3xl font-semibold text-[#111827]">{{ $author->name }}</h1>
+                <p class="text-sm text-[#6B7280] mt-1">@{{ $author->username }}</p>
+
+                @if($author->bio)
+                    <p class="mt-3 text-[#6B7280] leading-relaxed">{{ $author->bio }}</p>
+                @endif
+
+                <div class="flex flex-wrap items-center gap-5 mt-4 text-sm text-[#6B7280]">
+                    <span><strong class="text-[#111827]">{{ number_format($followers_count) }}</strong> followers</span>
+                    <span><strong class="text-[#111827]">{{ number_format($following_count) }}</strong> following</span>
+                    <span class="text-[#6366F1]">Followed by {{ number_format($followers_count) }} users</span>
+                </div>
+            </div>
+
+            <div class="sm:self-start">
+                @auth
+                    @if($author->id !== auth()->id())
+                        @if($isFollowing)
+                            <form action="{{ route('diary.unfollow', $author->id) }}" method="POST">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold border border-[#6366F1] text-[#6366F1] hover:bg-[#EEF2FF] transition">
+                                    Following
+                                </button>
+                            </form>
+                        @else
+                            <form action="{{ route('diary.follow', $author->id) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold bg-[#6366F1] text-white border border-[#6366F1] hover:bg-[#4F46E5] transition">
+                                    Follow
+                                </button>
+                            </form>
+                        @endif
+                    @endif
+                @else
+                    <a href="{{ route('login') }}" class="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold bg-[#6366F1] text-white border border-[#6366F1] hover:bg-[#4F46E5] transition">
+                        Login to Follow
+                    </a>
+                @endauth
+            </div>
+        </div>
+    </section>
+
+    <section class="mt-8">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-semibold text-[#111827]">Recent Works</h2>
+            <span class="text-xs text-[#6B7280]">Latest {{ min($recent_stories->count(), 10) }} stories</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            @forelse($recent_stories as $story)
+                <a href="{{ route('diary.stories.show', $story->slug) }}" class="rounded-2xl border border-[#E5E7EB] bg-white p-3 shadow-[0_8px_24px_-16px_rgba(17,24,39,0.25)] hover:border-[#6366F1] transition">
+                    <div class="flex gap-3">
+                        @if($story->cover_image)
+                            <img src="{{ $story->cover_image }}" alt="{{ $story->title }}" class="w-20 h-24 rounded-lg object-cover border border-[#E5E7EB]">
+                        @else
+                            <div class="w-20 h-24 rounded-lg bg-[#EEF2FF] border border-[#E5E7EB] flex items-center justify-center text-[#6366F1]">📖</div>
+                        @endif
+
+                        <div class="min-w-0 flex-1">
+                            <h3 class="font-semibold text-[#111827] truncate">{{ $story->title }}</h3>
+                            <p class="text-xs text-[#6B7280] mt-1 line-clamp-2">{{ Str::limit($story->description, 100) }}</p>
+                            <div class="mt-2 text-xs text-[#6B7280] flex flex-wrap gap-2">
+                                <span>👁 {{ number_format($story->story_reads_count) }}</span>
+                                <span>❤️ {{ number_format($story->likes_count) }}</span>
+                                <span>📚 {{ $story->parts_count }}</span>
+                                <span>⏱ {{ $story->read_time }} min</span>
+                            </div>
+                        </div>
+                    </div>
                 </a>
-            </li>
-            @endforeach
-        </ul>
-        @if($stories->isEmpty())
-        <p class="text-slate-500">No stories yet.</p>
-        @endif
+            @empty
+                <div class="col-span-full rounded-2xl border border-[#E5E7EB] bg-white p-8 text-center text-[#6B7280]">
+                    No stories published yet.
+                </div>
+            @endforelse
+        </div>
     </section>
 </div>
 @endsection

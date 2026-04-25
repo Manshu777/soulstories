@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ChapterWriterController;
+use App\Http\Controllers\Api\SearchController;
 
 use App\Http\Controllers\ProfileController;
 
@@ -31,3 +32,4 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 Route::post('/generate-chapter', [ChapterWriterController::class, 'generate']);
 Route::post('/chapters', [ChapterWriterController::class, 'store']);
+Route::get('/search', [SearchController::class, 'index']);

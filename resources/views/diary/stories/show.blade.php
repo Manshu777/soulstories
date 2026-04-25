@@ -1,303 +1,177 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Artisan Reader | {{ $story->title }}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,800;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
-    <style>
-        :root {
-            --paper-bg: #fdfaf6;
-            --ink-primary: #2c241e;
-            --accent-gold: #b68b54;
-            --accent-soft: #e9dbc9;
-            --border-color: rgba(182, 139, 84, 0.15);
-        }
+@extends('layouts.app')
 
-        body {
-            background-color: #f4eee4;
-            color: var(--ink-primary);
-            font-family: 'Inter', sans-serif;
-            line-height: 1.6;
-        }
+@section('content')
+@php
+    $activeChapterNumber = (int) request('chapter', $firstChapter?->chapter_number ?? 1);
+    $activeChapter = $story->publishedChapters->firstWhere('chapter_number', $activeChapterNumber) ?? $firstChapter;
+    $paragraphs = $activeChapter ? preg_split('/\n\s*\n/', (string) $activeChapter->content) : [];
+@endphp
 
-        /* Subtle Paper Texture */
-        .reader-shell {
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(255, 255, 255, 0.5) 0, transparent 50%),
-                url("https://www.transparenttextures.com/patterns/natural-paper.png");
-            min-height: 100vh;
-        }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
-        /* Sticky Reading Progress */
-        .progress-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            z-index: 1000;
-            background: rgba(255,255,255,0.1);
-        }
-        #readingProgressBar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(to right, var(--accent-gold), #8b5a2b);
-            transition: width 0.1s ease-out;
-            box-shadow: 0 0 10px rgba(182, 139, 84, 0.4);
-        }
+<style>
+    .reader-page { background: #f8f6f2; }
+    .manuscript-card { background: #fffdf9; border: 1px solid #ebe7df; box-shadow: 0 16px 40px -24px rgba(17,24,39,0.35); }
+    .toc-card { background: #fff; border: 1px solid #ebe7df; }
+    .story-title { font-family: 'Playfair Display', serif; }
+    .story-body { font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; line-height: 1.9; color: #2f2a24; }
+    .story-body p { margin-bottom: 1.2rem; }
+    .dropcap:first-letter {
+        float: left;
+        font-family: 'Playfair Display', serif;
+        font-size: 4.8rem;
+        line-height: .75;
+        padding-right: .5rem;
+        color: #a5783f;
+        font-weight: 700;
+    }
+    .toc-link { transition: all .2s ease; }
+    .toc-link:hover, .toc-link.active { background: #f5efe5; color: #111827; transform: translateX(3px); }
+</style>
 
-        /* Manuscript Card */
-        .manuscript-card {
-            background: var(--paper-bg);
-            border: 1px solid white;
-            box-shadow: 
-                0 10px 30px -10px rgba(0,0,0,0.05),
-                0 1px 2px rgba(0,0,0,0.05);
-            border-radius: 12px;
-            position: relative;
-        }
+<div class="reader-page min-h-[calc(100vh-4rem)] py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6">
+        <div class="grid lg:grid-cols-12 gap-8">
+            <aside class="lg:col-span-4 space-y-5">
+                <div class="rounded-xl overflow-hidden shadow-[0_20px_40px_-20px_rgba(17,24,39,0.35)]">
+                    @if($story->cover_image)
+                        <img src="{{ str_starts_with($story->cover_image, 'http') ? $story->cover_image : '/storage/'.ltrim($story->cover_image, '/') }}" alt="{{ $story->title }}" class="w-full aspect-[3/4] object-cover">
+                    @else
+                        <div class="aspect-[3/4] bg-[#eef2ff] flex items-center justify-center text-4xl text-[#6366F1]">📖</div>
+                    @endif
+                </div>
 
-        /* The Literary Dropcap */
-        .story-content p:first-of-type::first-letter {
-            font-family: 'Playfair Display', serif;
-            font-size: 5rem;
-            float: left;
-            line-height: 0.7;
-            margin: 0.1em 0.1em 0 0;
-            color: var(--accent-gold);
-            font-weight: 800;
-        }
+                <div class="toc-card rounded-xl p-4">
+                    <h3 class="text-lg text-[#111827] story-title mb-3">Table of Contents</h3>
+                    <div class="space-y-1">
+                        @forelse($story->publishedChapters as $index => $ch)
+                            <a href="{{ route('diary.story.show', ['slug' => $story->slug, 'chapter' => $ch->chapter_number]) }}"
+                               class="toc-link {{ $activeChapter && $activeChapter->id === $ch->id ? 'active' : '' }} flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-[#6B7280]">
+                                <span class="w-7 text-xs opacity-60">{{ sprintf('%02d', $index + 1) }}</span>
+                                <span class="truncate">{{ $ch->chapter_title ?: 'Untitled chapter' }}</span>
+                            </a>
+                        @empty
+                            <p class="text-sm text-[#6B7280]">No parts yet.</p>
+                        @endforelse
+                    </div>
+                </div>
+            </aside>
 
-        .story-content p {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.35rem;
-            margin-bottom: 1.8rem;
-            text-align: justify;
-            hyphens: auto;
-        }
+            <main class="lg:col-span-8">
+                <article class="manuscript-card rounded-xl p-6 sm:p-10">
+                    <h1 class="story-title text-4xl sm:text-5xl font-bold text-[#111827] leading-tight mb-4">{{ $story->title }}</h1>
 
-        /* Elegant Sidebar List */
-        .chapter-link {
-            transition: all 0.3s ease;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            padding: 0.75rem 1rem;
-            color: #5c4e40;
-            text-decoration: none;
-        }
-        .chapter-link:hover, .chapter-link.active {
-            background: var(--accent-soft);
-            color: var(--ink-primary);
-            transform: translateX(4px);
-        }
-
-        .poetic-quote {
-            font-family: 'Cormorant Garamond', serif;
-            font-style: italic;
-            border-left: 3px solid var(--accent-gold);
-            padding-left: 1.5rem;
-            margin: 2rem 0;
-            color: #6b5a4a;
-        }
-
-        .ornament {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 1.5rem;
-            color: var(--accent-gold);
-            margin: 3rem 0;
-            opacity: 0.6;
-        }
-
-        /* Glassmorphism Buttons */
-        .btn-artisan {
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(8px);
-            border: 1px solid var(--border-color);
-            padding: 0.6rem 1.2rem;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .btn-artisan:hover {
-            background: var(--paper-bg);
-            border-color: var(--accent-gold);
-            transform: translateY(-1px);
-        }
-
-        @media (max-width: 768px) {
-            .story-content p {
-                font-size: 1.2rem;
-                text-align: left;
-            }
-        }
-    </style>
-</head>
-<body>
-    @extends('layouts.app')
-
-    @section('content')
-    <div class="progress-container"><div id="readingProgressBar"></div></div>
-
-    <div class="reader-shell pb-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-            
-            <nav class="flex items-center gap-2 text-xs uppercase tracking-widest text-stone-500 mb-10">
-                <a href="{{ route('diary.home') }}" class="hover:text-amber-700 transition">Scriptorium</a>
-                <span>/</span>
-                <span class="text-stone-800 font-semibold">{{ $story->title }}</span>
-            </nav>
-
-            <div class="grid lg:grid-cols-12 gap-12">
-                
-                <aside class="lg:col-span-4 space-y-8">
-                    <div class="rounded-xl overflow-hidden shadow-2xl transform -rotate-1 hover:rotate-0 transition-transform duration-500">
-                        @if($story->cover_image)
-                            <img src="/storage/{{ $story->cover_image }}" class="w-full h-auto object-cover">
-                        @else
-                            <div class="aspect-[3/4] bg-stone-200 flex items-center justify-center text-4xl">📖</div>
-                        @endif
+                    <div class="flex flex-wrap items-center gap-3 text-sm text-[#6B7280] mb-6 border-b border-[#ece8e0] pb-4">
+                        <span class="w-8 h-8 rounded-full border border-[#e4ddcf] bg-white flex items-center justify-center text-xs text-[#8a7a63]">{{ Str::upper(Str::limit($story->user->name, 1)) }}</span>
+                        <a href="{{ route('diary.authors.show', $story->user->username) }}" class="hover:text-[#4F46E5] italic">{{ $story->user->name }}</a>
+                        <span>•</span>
+                        <span>{{ $story->read_time }} min read</span>
+                        <span>•</span>
+                        <span>{{ number_format($story->story_reads_count) }} readings</span>
                     </div>
 
-                    <div class="p-6 bg-white/50 backdrop-blur-sm rounded-xl border border-stone-200">
-                        <h3 class="font-serif text-xl mb-6 border-b border-stone-200 pb-2">Table of Contents</h3>
-                        <nav class="space-y-1">
-                            @foreach($story->publishedChapters as $index => $ch)
-                                <a href="?chapter={{ $ch->chapter_number }}" 
-                                   class="chapter-link {{ request('chapter') == $ch->chapter_number ? 'active' : '' }}">
-                                    <span class="w-8 opacity-40 font-serif italic">{{ sprintf('%02d', $index + 1) }}</span>
-                                    <span class="flex-1 truncate">{{ $ch->chapter_title ?: 'Untitled Fragment' }}</span>
-                                </a>
-                            @endforeach
-                        </nav>
-                    </div>
-                </aside>
+                    @if($story->description)
+                        <blockquote class="border-l-2 border-[#cda873] pl-4 text-[#7b6a54] italic mb-8 text-lg">{{ $story->description }}</blockquote>
+                    @endif
 
-                <main class="lg:col-span-8">
-                    <article class="manuscript-card p-8 sm:p-16">
-                        <header class="mb-12">
-                            <h1 class="text-5xl font-serif font-bold text-stone-900 mb-6 leading-tight">
-                                {{ $story->title }}
-                            </h1>
-                            
-                            <div class="flex flex-wrap items-center gap-6 text-sm text-stone-500 border-y border-stone-100 py-4">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-8 h-8 rounded-full bg-stone-100 border flex items-center justify-center font-serif">
-                                        {{ substr($story->user->name, 0, 1) }}
-                                    </div>
-                                    <span class="italic">{{ $story->user->name }}</span>
-                                </div>
-                                <span>•</span>
-                                <span>{{ $story->read_time }} min read</span>
-                                <span>•</span>
-                                <span>{{ number_format($story->story_reads_count) }} readings</span>
-                            </div>
-                        </header>
-
-                        @if($story->description)
-                            <div class="poetic-quote text-xl">
-                                {{ $story->description }}
-                            </div>
+                    @if($activeChapter)
+                        @if($activeChapter->chapter_title)
+                            <h2 class="story-title text-2xl text-[#3f352b] mb-6 italic">{{ $activeChapter->chapter_title }}</h2>
                         @endif
-
-                        <div class="story-content">
-                            @php
-                                $firstChapter = $chapter;
-                                $paragraphs = $firstChapter ? preg_split('/\n\s*\n/', $firstChapter->content) : [];
-                            @endphp
-
-                            @if($firstChapter)
-                                @if($firstChapter->chapter_title)
-                                    <h2 class="font-serif text-2xl text-stone-700 mb-8 italic">
-                                        {{ $firstChapter->chapter_title }}
-                                    </h2>
+                        <div class="story-body">
+                            @foreach($paragraphs as $i => $para)
+                                @if(trim($para))
+                                    <p class="{{ $i === 0 ? 'dropcap' : '' }}">{!! nl2br(e(trim($para))) !!}</p>
                                 @endif
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-center py-16 text-[#6B7280] italic">This story has no published chapters yet.</p>
+                    @endif
 
-                                @foreach($paragraphs as $para)
-                                    @if(trim($para))
-                                        <p>{!! nl2br(e(trim($para))) !!}</p>
-                                    @endif
-                                @endforeach
-                            @else
-                                <div class="text-center py-20 opacity-50 italic">
-                                    This page remains unwritten...
-                                </div>
+                    <div class="mt-8 flex flex-wrap gap-2">
+                        @auth
+                            <form action="{{ route('diary.like.story', $story) }}" method="post">
+                                @csrf
+                                <button class="rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-sm text-[#111827] hover:bg-[#f6f6f6]">{{ $hasLiked ? '❤️ Liked' : '🤍 Like' }}</button>
+                            </form>
+                        @else
+                            <a href="{{ route('login') }}" class="rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-sm text-[#111827] hover:bg-[#f6f6f6]">Login to like</a>
+                        @endauth
+                        <button id="shareStoryBtn" type="button" class="rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-sm text-[#111827] hover:bg-[#f6f6f6]">🔗 Share</button>
+                    </div>
+                </article>
+            </main>
+        </div>
+
+        <section class="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-8 lg:col-start-5 rounded-xl border border-[#E5E7EB] bg-white p-5 sm:p-6">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <h3 class="text-xl story-title text-[#111827]">Ratings & Comments</h3>
+                    <div class="text-sm text-[#6B7280]">
+                        <span class="font-semibold text-[#111827]">{{ $averageRating > 0 ? number_format($averageRating, 1) : '0.0' }}</span>
+                        <span class="mx-1">★</span>
+                        <span>({{ $story->reviews_count }} ratings)</span>
+                    </div>
+                </div>
+
+                @auth
+                    <form action="{{ route('diary.story.review', $story) }}" method="POST" class="rounded-xl border border-[#E5E7EB] p-4 mb-5">
+                        @csrf
+                        <label class="text-xs uppercase font-semibold text-[#6B7280]">Your Rating</label>
+                        <div class="flex items-center gap-2 mt-2 mb-3">
+                            <select name="rating" class="w-28 rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm">
+                                @for($r=5; $r>=1; $r--)
+                                    <option value="{{ $r }}" @selected((int) old('rating', $myReview->rating ?? 0) === $r)>{{ $r }} ★</option>
+                                @endfor
+                            </select>
+                            <span class="text-xs text-[#6B7280]">Rate this story</span>
+                        </div>
+                        <label class="text-xs uppercase font-semibold text-[#6B7280]">Comment</label>
+                        <textarea name="comment" rows="3" placeholder="Share your thoughts..." class="mt-1 w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm text-[#111827]">{{ old('comment', $myReview->comment ?? '') }}</textarea>
+                        @error('rating') <p class="text-xs text-[#6366F1] mt-1">{{ $message }}</p> @enderror
+                        @error('comment') <p class="text-xs text-[#6366F1] mt-1">{{ $message }}</p> @enderror
+                        <button type="submit" class="mt-3 rounded-lg bg-[#6366F1] text-white px-4 py-2 text-sm font-semibold border border-[#6366F1] hover:bg-[#4F46E5]">Submit Rating</button>
+                    </form>
+                @else
+                    <div class="rounded-xl border border-[#E5E7EB] p-4 mb-5 text-sm text-[#6B7280]">
+                        <a href="{{ route('login') }}" class="text-[#6366F1] font-semibold hover:text-[#4F46E5]">Login</a> to rate and comment.
+                    </div>
+                @endauth
+
+                <div class="space-y-3">
+                    @forelse($story->reviews->sortByDesc('created_at') as $review)
+                        <div class="rounded-xl border border-[#E5E7EB] p-4">
+                            <div class="flex items-center justify-between gap-2">
+                                <p class="text-sm font-semibold text-[#111827]">{{ $review->user->name ?? 'Reader' }}</p>
+                                <p class="text-xs text-[#6B7280]">{{ $review->created_at?->diffForHumans() }}</p>
+                            </div>
+                            <p class="text-sm text-[#6B7280] mt-1">{{ str_repeat('★', (int) $review->rating) }}<span class="ml-1 text-[#9ca3af]">{{ str_repeat('★', max(0, 5 - (int) $review->rating)) }}</span></p>
+                            @if($review->comment)
+                                <p class="mt-2 text-sm text-[#111827] leading-relaxed whitespace-pre-wrap">{{ $review->comment }}</p>
                             @endif
                         </div>
-
-                        <div class="ornament">
-                            <span>❦</span>
-                            <div class="h-px w-20 bg-stone-200"></div>
-                            <span>❦</span>
-                        </div>
-
-                        <footer class="flex flex-wrap gap-3 mt-10">
-                            @auth
-                                <form action="{{ route('diary.like.story', $story) }}" method="post">
-                                    @csrf
-                                    <button class="btn-artisan {{ $hasLiked ? 'text-rose-600 border-rose-200 bg-rose-50' : '' }}">
-                                        {{ $hasLiked ? '❤️ Liked' : '🤍 Like' }}
-                                    </button>
-                                </form>
-                                <button class="btn-artisan" id="share-story-btn">
-                                    🔗 Share
-                                </button>
-                            @else
-                                <a href="{{ route('login') }}" class="btn-artisan">🔐 Log in to interact</a>
-                            @endauth
-                        </footer>
-                    </article>
-
-                    <div class="mt-8 p-8 rounded-xl bg-stone-900 text-stone-100 flex items-center gap-6">
-                        <div class="hidden sm:block">
-                            <div class="w-20 h-20 rounded-full border-2 border-stone-700 overflow-hidden">
-                                <img src="{{ $story->user->avatar ?? 'https://ui-avatars.com/api/?name='.urlencode($story->user->name) }}" class="w-full h-full object-cover">
-                            </div>
-                        </div>
-                        <div class="flex-1">
-                            <h4 class="font-serif text-lg">About the Author</h4>
-                            <p class="text-stone-400 text-sm mt-1">Dedicated to the craft of storytelling. Follow for more chronicles.</p>
-                            <a href="#" class="text-amber-400 text-xs uppercase tracking-widest mt-3 inline-block hover:text-white transition">View Profile</a>
-                        </div>
-                    </div>
-                </main>
+                    @empty
+                        <p class="text-sm text-[#6B7280]">No ratings or comments yet. Be the first to review this story.</p>
+                    @endforelse
+                </div>
             </div>
-        </div>
+        </section>
     </div>
+</div>
 
-    <script>
-        // Smooth Reading Progress
-        window.addEventListener('scroll', () => {
-            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
-            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-            const scrolled = (winScroll / height) * 100;
-            document.getElementById("readingProgressBar").style.width = scrolled + "%";
-        });
-
-        // Native Share API
-        document.getElementById('share-story-btn')?.addEventListener('click', async () => {
-            try {
-                await navigator.share({
-                    title: '{{ $story->title }}',
-                    text: '{{ Str::limit($story->description, 100) }}',
-                    url: window.location.href,
-                });
-            } catch (err) {
-                navigator.clipboard.writeText(window.location.href);
-                alert('Link copied to parchment!');
+<script>
+    document.getElementById('shareStoryBtn')?.addEventListener('click', async () => {
+        try {
+            if (navigator.share) {
+                await navigator.share({ title: @json($story->title), url: window.location.href });
+            } else {
+                await navigator.clipboard.writeText(window.location.href);
+                alert('Link copied');
             }
-        });
-    </script>
-    @endsection
-</body>
-</html>
+        } catch (e) {}
+    });
+</script>
+@endsection

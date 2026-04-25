@@ -60,8 +60,13 @@ class StoryController extends Controller
     public function show(string $slug)
     {
         $story = Story::where('slug', $slug)
-            ->with(['user:id,name,username,avatar,bio', 'publishedChapters'])
-            ->withCount('storyReads')
+            ->with(['user:id,name,username,avatar,bio', 'publishedChapters', 'reviews.user:id,name,username,avatar'])
+            ->withCount([
+                'storyReads',
+                'likes as likes_count',
+                'publishedChapters as parts_count',
+                'reviews as reviews_count',
+            ])
             ->firstOrFail();
 
         if (! $story->isPublic()) {
@@ -70,18 +75,30 @@ class StoryController extends Controller
             }
         }
 
-         $chapterNumber = request()->get('chapter', 1);
-
-    $chapter = StoryChapter::where('story_id', $story->id)
-        ->where('chapter_number', $chapterNumber)
-        ->first();
-
-        $likesCount = $story->likes()->count();
-        $commentsCount = $story->chapters->sum(fn ($c) => $c->allComments()->where('status', 'visible')->count());
+        $firstChapter = $story->publishedChapters->sortBy('chapter_number')->first();
+        $likesCount = (int) $story->likes_count;
+        $commentsCount = $story->chapters()->with('allComments')->get()->sum(fn ($c) => $c->allComments()->where('status', 'visible')->count());
         $inLibrary = auth()->check() && auth()->user()->library()->where('story_id', $story->id)->exists();
         $hasLiked = auth()->check() && $story->likes()->where('user_id', auth()->id())->exists();
+        $isFollowingAuthor = auth()->check()
+            && auth()->id() !== $story->user_id
+            && auth()->user()->following()->where('following_id', $story->user_id)->exists();
+        $averageRating = round((float) ($story->reviews()->avg('rating') ?? 0), 1);
+        $myReview = auth()->check()
+            ? $story->reviews()->withoutGlobalScopes()->where('user_id', auth()->id())->first()
+            : null;
 
-        return view('diary.stories.show', compact('story', 'likesCount', 'commentsCount', 'inLibrary', 'hasLiked',"chapter"));
+        return view('diary.stories.show', compact(
+            'story',
+            'likesCount',
+            'commentsCount',
+            'inLibrary',
+            'hasLiked',
+            'firstChapter',
+            'isFollowingAuthor',
+            'averageRating',
+            'myReview'
+        ));
     }
 
     public function create()
@@ -95,6 +112,7 @@ class StoryController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string|max:5000',
             'cover_image' => 'nullable',
+            'category_id' => 'nullable|exists:categories,id',
             'genre' => 'nullable|string|max:100',
             'language' => 'required|in:hindi,hinglish',
             'story_type' => 'required|in:short_story,series,poems',
@@ -141,6 +159,7 @@ class StoryController extends Controller
             'slug' => $slug,
             'description' => $valid['description'] ?? null,
             'cover_image' => $coverPath,
+            'category_id' => $valid['category_id'] ?? null,
             'genre' => $valid['genre'] ?? null,
             'tags' => $tags ?: null,
             'language' => $valid['language'],
@@ -174,6 +193,7 @@ class StoryController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string|max:5000',
             'cover_image' => 'nullable',
+            'category_id' => 'nullable|exists:categories,id',
             'genre' => 'nullable|string|max:100',
             'language' => 'required|in:hindi,hinglish',
             'story_type' => 'required|in:short_story,series,poems',
@@ -197,6 +217,7 @@ class StoryController extends Controller
         $data = [
             'title' => $valid['title'],
             'description' => $valid['description'] ?? null,
+            'category_id' => $valid['category_id'] ?? null,
             'genre' => $valid['genre'] ?? null,
             'tags' => $tags ?: null,
             'language' => $valid['language'],

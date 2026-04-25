@@ -10,8 +10,8 @@ class AdminAuthController extends Controller
 {
     public function showLoginForm()
     {
-        if (Auth::check() && Auth::user()->hasRole('admin')) {
-            return redirect()->route('admin.stories.index');
+        if (Auth::guard('admin')->check() && Auth::guard('admin')->user()->hasAnyRole(['Super Admin', 'Admin', 'Moderator', 'Editor', 'admin'])) {
+            return redirect()->route('admin.dashboard');
         }
         return view('admin.login');
     }
@@ -23,24 +23,24 @@ class AdminAuthController extends Controller
             'password' => 'required',
         ]);
 
-        if (! Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
+        if (! Auth::guard('admin')->attempt($request->only('email', 'password'), $request->boolean('remember'))) {
             return back()->withInput($request->only('email'))
                 ->withErrors(['email' => 'Invalid credentials.']);
         }
 
-        if (! Auth::user()->hasRole('admin')) {
-            Auth::logout();
+        if (! Auth::guard('admin')->user()->hasAnyRole(['Super Admin', 'Admin', 'Moderator', 'Editor', 'admin'])) {
+            Auth::guard('admin')->logout();
             return back()->withInput($request->only('email'))
                 ->withErrors(['email' => 'Admin access only.']);
         }
 
         $request->session()->regenerate();
-        return redirect()->intended(route('admin.stories.index'));
+        return redirect()->intended(route('admin.dashboard'));
     }
 
     public function logout(Request $request)
     {
-        Auth::logout();
+        Auth::guard('admin')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         return redirect()->route('admin.login');

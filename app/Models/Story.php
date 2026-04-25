@@ -12,6 +12,7 @@ class Story extends Model
 
     protected $fillable = [
         'user_id',
+        'category_id',
         'title',
         'slug',
         'cover_image',
@@ -45,6 +46,11 @@ class Story extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
+
     public function chapters(): HasMany
     {
         return $this->hasMany(StoryChapter::class, 'story_id')->orderBy('sort_order')->orderBy('chapter_number');
@@ -76,6 +82,11 @@ class Story extends Model
     public function reports(): HasMany
     {
         return $this->hasMany(StoryReport::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(StoryReview::class, 'story_id')->where('status', 'visible');
     }
 
     public function getRouteKeyName(): string

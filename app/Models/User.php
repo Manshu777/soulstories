@@ -7,6 +7,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\Schema;
 
 class User extends Authenticatable
 {
@@ -18,8 +19,10 @@ class User extends Authenticatable
         'email',
         'password',
         'avatar',
+        'profile_image',
         'bio',
         'status',
+        'beta_program',
     'phone',
     'dob',
     'pronouns',
@@ -39,6 +42,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'beta_program' => 'boolean',
     ];
 
     /* ================= RELATIONSHIPS ================= */
@@ -48,7 +52,7 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(
             User::class,
-            'followers',
+            $this->followTable(),
             'following_id',
             'follower_id'
         );
@@ -59,10 +63,15 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(
             User::class,
-            'followers',
+            $this->followTable(),
             'follower_id',
             'following_id'
         );
+    }
+
+    private function followTable(): string
+    {
+        return Schema::hasTable('follows') ? 'follows' : 'followers';
     }
 
     // Contents (stories, poems, series, quotes)
@@ -115,6 +124,21 @@ class User extends Authenticatable
     public function storyLikes()
     {
         return $this->hasMany(StoryLike::class);
+    }
+
+    public function preference()
+    {
+        return $this->hasOne(UserPreference::class);
+    }
+
+    public function mutedUsers()
+    {
+        return $this->belongsToMany(User::class, 'muted_users', 'user_id', 'muted_user_id')->withTimestamps();
+    }
+
+    public function blockedUsers()
+    {
+        return $this->belongsToMany(User::class, 'blocked_users', 'user_id', 'blocked_user_id')->withTimestamps();
     }
 
     public function isBlocked(): bool
